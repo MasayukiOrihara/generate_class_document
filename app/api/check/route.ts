@@ -1,6 +1,7 @@
 import { CHECK_ERROR, UNKNOWN_ERROR, URL_ERROR } from "@/lib/messages";
 import { OpenAi4o } from "@/lib/models";
 import { MarkdownInfo } from "@/lib/schema";
+import { COMPONENT_ANALYZE_TEMPLATE, GRAPH_ANALYZE_TEMPLATE, MODULE_ANALYZE_TEMPLATE, NODE_ANALYZE_TEMPLATE, SERVICE_ANALYZE_TEMPLATE, TYPE_ANALYZE_TEMPLATE } from "@/lib/template";
 import { messageText } from "@/lib/utils";
 import { toUIMessageStream } from "@ai-sdk/langchain";
 import { PromptTemplate } from "@langchain/core/prompts";
@@ -38,71 +39,19 @@ export async function POST(req: Request) {
     console.log(text)
 
     /* === === LLM === === */
-    console.log("誤字脱字のチェック中...");
+    console.log("ファイル解析中...");
     // プロンプトの取得
-    const template = `以下のコンポーネントのコードを読んで、以下の情報をまとめてください。
-
-    ## ROLE
-    - コードの内容を正確に把握し、各セクションごとに必要な情報を整理すること
-    - 不明確な点があれば、推測せずにそのまま記載すること
-    - 各項目に複数の情報がある場合は、箇条書きで整理すること
-
-    ## コード
-    <component>
-    {component}
-    </component>
-
-
-    ## フォーマット
-    【ファイル情報】
-    - ディレクトリ: [空欄]
-    - ファイル名: {file}
-    - ファイル概要:
-    - クライアントコンポーネント: [○／×]
-
-    【適応CSSモジュール】
-    1. CSSモジュール名: 
-    2. ...（以下、CSSモジュールごとに繰り返し）
-
-    【親コンポーネント】
-    - 親コンポーネント名:
-    - 親コンポーネント概要:
-
-    【子コンポーネント】
-    1. 子コンポーネント名:
-      - 子コンポーネント概要:
-      - Props情報:
-    2. ...（以下、子コンポーネントごとに繰り返し）
-
-    【props】
-    - props名:
-    - props構成:
-
-    【状態管理】
-    1. 利用Hooks: 
-      - 状態管理概要:
-      - 正常処理: 
-      - エラー処理:
-    2. ...（以下、状態管理ごとに繰り返し）
-
-    【関数・メソッド】
-    1. アクセス修飾子: 
-      - 関数・メソッド名:
-      - 引数: 
-      - 戻り値: 
-      - 処理概要:
-      - 正常処理:
-      - エラー処理:
-    2. ...（以下、関数・メソッドごとに繰り返し）
+    const template = COMPONENT_ANALYZE_TEMPLATE;
+    // const template = MODULE_ANALYZE_TEMPLATE;
+    // const template =  SERVICE_ANALYZE_TEMPLATE;
+    // const template = GRAPH_ANALYZE_TEMPLATE;
+    // const template = NODE_ANALYZE_TEMPLATE;
+    // const template = TYPE_ANALYZE_TEMPLATE;
     
-    【全体処理概要】
-    - 正常処理
-    - エラー処理
-    `;
     const prompt = PromptTemplate.fromTemplate(template);
     const promptVariables = {
-      file: file,
-      component: text,
+      fileName: file,
+      code: text,
     };
     // LLM 応答
     const chain = prompt.pipe(OpenAi4o);
@@ -112,6 +61,7 @@ export async function POST(req: Request) {
       stream: toUIMessageStream(lcStream),
     });
 
+    console.log("ファイル解析完了 !");
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : UNKNOWN_ERROR;
