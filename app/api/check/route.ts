@@ -1,12 +1,16 @@
 import { CHECK_ERROR, UNKNOWN_ERROR, URL_ERROR } from "@/lib/messages";
-import { OpenAi4o } from "@/lib/models";
-import { MarkdownInfo } from "@/lib/schema";
-import { COMPONENT_ANALYZE_TEMPLATE, GRAPH_ANALYZE_TEMPLATE, MODULE_ANALYZE_TEMPLATE, NODE_ANALYZE_TEMPLATE, SERVICE_ANALYZE_TEMPLATE, TYPE_ANALYZE_TEMPLATE } from "@/lib/template";
+import { OpenAi4o, OpenAi5 } from "@/lib/models";
+import { TestCaseRow, TestCaseRowArraySchema, TestCaseRowSchema } from "@/lib/schema";
+import { COMPONENT_ANALYZE_TEMPLATE, GRAPH_ANALYZE_TEMPLATE, MODULE_ANALYZE_TEMPLATE, NODE_ANALYZE_TEMPLATE, SERVICE_ANALYZE_TEMPLATE, TYPE_ANALYZE_TEMPLATE } from "@/lib/template/class-template";
+import { TEST_ANALYZE_OUTPUT_TEMPLATE, TEST_ANALYZE_TEMPLATE } from "@/lib/template/test-template";
 import { messageText } from "@/lib/utils";
 import { toUIMessageStream } from "@ai-sdk/langchain";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { createUIMessageStreamResponse, UIMessage } from "ai";
 import { readFileSync } from "fs";
+import { buildWorkbook, Payload } from "./lib/exportSpecToExcel";
+import { exportFile } from "./lib/exportFile";
 
 export const SCENARIO_PATH = "public/markdowns/";
 export const MARKDOWN_READ_API = "/api/markdown/read";
@@ -19,8 +23,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     // フロントから今までのメッセージを取得
     const messages: UIMessage[] = body.messages ?? [];
-
-    
 
     // urlの取得
     const url = new URL(req.url);
@@ -36,33 +38,42 @@ export async function POST(req: Request) {
     const dir = FILE_PATH;
     const text = readFileSync(`${dir}${file}`, 'utf8');
 
-    console.log(text)
 
     /* === === LLM === === */
     console.log("ファイル解析中...");
     // プロンプトの取得
-    const template = COMPONENT_ANALYZE_TEMPLATE;
+    // const template = COMPONENT_ANALYZE_TEMPLATE;
     // const template = MODULE_ANALYZE_TEMPLATE;
     // const template =  SERVICE_ANALYZE_TEMPLATE;
     // const template = GRAPH_ANALYZE_TEMPLATE;
     // const template = NODE_ANALYZE_TEMPLATE;
     // const template = TYPE_ANALYZE_TEMPLATE;
+    // const template = TEST_ANALYZE_TEMPLATE;
+    const template =TEST_ANALYZE_OUTPUT_TEMPLATE;
+
+    // パサーを作成
+    const parser = StructuredOutputParser.fromZodSchema(TestCaseRowArraySchema);
     
     const prompt = PromptTemplate.fromTemplate(template);
     const promptVariables = {
       fileName: file,
       code: text,
+      format_instructions: parser.getFormatInstructions(),
     };
     // LLM 応答
-    const chain = prompt.pipe(OpenAi4o);
-    const lcStream = await chain.stream(promptVariables);
+    const chain = prompt.pipe(OpenAi5).pipe(parser);
+    // const lcStream = await chain.stream(promptVariables);
 
-    const response = createUIMessageStreamResponse({
-      stream: toUIMessageStream(lcStream),
-    });
+    // const response = createUIMessageStreamResponse({
+    //   stream: toUIMessageStream(lcStream),
+    // });
+    
+    const response: TestCaseRow[] = await chain.invoke(promptVariables);
 
+    const payload: Payload = { fileName: file, cases: response };
+    await exportFile(payload); ;
     console.log("ファイル解析完了 !");
-    return response;
+    return Response.json({ message: "ファイル解析完了しました。Excelファイルを確認してください。" }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : UNKNOWN_ERROR;
 
