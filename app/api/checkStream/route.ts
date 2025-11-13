@@ -2,6 +2,7 @@ import { CHECK_ERROR, UNKNOWN_ERROR, URL_ERROR } from "@/lib/messages";
 import { OpenAi41 } from "@/lib/models";
 import { TestCaseRowArraySchema } from "@/lib/schema";
 import { COMPONENT_ANALYZE_TEMPLATE, GRAPH_ANALYZE_TEMPLATE, MODULE_ANALYZE_TEMPLATE, NODE_ANALYZE_TEMPLATE, SERVICE_ANALYZE_TEMPLATE, TYPE_ANALYZE_TEMPLATE } from "@/lib/template/class-template";
+import { TEST_CODE_GENERATE_TEMPLATE } from "@/lib/template/test-template";
 import { messageText } from "@/lib/utils";
 import { toUIMessageStream } from "@ai-sdk/langchain";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
@@ -39,13 +40,14 @@ export async function POST(req: Request) {
     /* === === LLM === === */
     console.log("ファイル解析中...");
     // プロンプトの取得
-    const template = COMPONENT_ANALYZE_TEMPLATE;
+    // const template = COMPONENT_ANALYZE_TEMPLATE;
     // const template = MODULE_ANALYZE_TEMPLATE;
     // const template =  SERVICE_ANALYZE_TEMPLATE;
     // const template = GRAPH_ANALYZE_TEMPLATE;
     // const template = NODE_ANALYZE_TEMPLATE;
     // const template = TYPE_ANALYZE_TEMPLATE;
     // const template = TEST_ANALYZE_TEMPLATE;
+    const template = TEST_CODE_GENERATE_TEMPLATE;
 
     // パサーを作成
     const parser = StructuredOutputParser.fromZodSchema(TestCaseRowArraySchema);

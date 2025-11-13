@@ -10,7 +10,7 @@ export const Chat = () => {
   const [input, setInput] = useState("");
   const { messages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/check",
+      api: "/api/checkStream",
       credentials: "include",
     }),
   });
