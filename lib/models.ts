@@ -18,8 +18,8 @@ export const OpenAi4o = new ChatOpenAI({
   cache: true,
 });
 
-// opebAIモデル（5）
-export const OpenAi5 = new ChatOpenAI({
+// opebAIモデル（4.1）
+export const OpenAi41 = new ChatOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   model: "gpt-4.1",
   cache: true,
