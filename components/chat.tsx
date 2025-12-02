@@ -5,12 +5,16 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useState } from "react";
 
+// 分析文言作成のエンドポイント
+const chatApi = "/api/checkStream";
+// 単体テスト作成のエンドポイント
+const excelApi = "/api/checkExportExcel";
 
 export const Chat = () => {
   const [input, setInput] = useState("");
   const { messages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/checkStream",
+      api: excelApi,
       credentials: "include",
     }),
   });
@@ -18,7 +22,7 @@ export const Chat = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() === "") return;
-    sendMessage({ text: input }, {  });
+    sendMessage({ text: input }, {});
     setInput("");
   };
 
